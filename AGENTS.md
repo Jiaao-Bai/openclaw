@@ -7,6 +7,14 @@
 ## Project Structure & Module Organization
 
 - Source code: `src/` (CLI wiring in `src/cli`, commands in `src/commands`, web provider in `src/provider-web.ts`, infra in `src/infra`, media pipeline in `src/media`).
+  - Gateway & sessions: `src/gateway/`, `src/sessions/`, `src/daemon/`
+  - Messaging: `src/channels/`, `src/routing/`, `src/telegram/`, `src/discord/`, `src/slack/`, `src/signal/`, `src/imessage/`, `src/web/` (WhatsApp)
+  - Plugin system: `src/plugins/`, `src/plugin-sdk/`, `src/plugin-sdk-internal/`
+  - AI/agents: `src/agents/`, `src/context-engine/`, `src/hooks/`
+  - Media/voice: `src/media/`, `src/media-understanding/`, `src/tts/`, `src/realtime-voice/`
+  - CLI/terminal: `src/cli/`, `src/commands/`, `src/terminal/`
+  - Config/infra: `src/config/`, `src/secrets/`, `src/infra/`, `src/mcp/`
+- Extensions: `extensions/` — bundled workspace plugin packages (channels, providers, tools); each is an independent npm package under the plugin SDK boundary.
 - Tests: colocated `*.test.ts`.
 - Docs: `docs/` (images, queue, Pi config). Built output lives in `dist/`.
 - Nomenclature: use "plugin" / "plugins" in docs, UI, changelogs, and contributor guidance. The bundled workspace plugin tree remains the internal package layout to avoid repo-wide churn from a rename.
@@ -29,12 +37,12 @@
   - `src/channels/*` = core channel implementation details behind the plugin/channel boundary
   - `src/plugins/*` = plugin discovery, manifest validation, loader, registry, and contract enforcement
   - `src/gateway/protocol/*` = typed Gateway control-plane and node wire protocol
-- Progressive disclosure lives in local boundary guides:
-  - bundled-plugin-tree `AGENTS.md`
-  - `src/plugin-sdk/AGENTS.md`
-  - `src/channels/AGENTS.md`
-  - `src/plugins/AGENTS.md`
-  - `src/gateway/protocol/AGENTS.md`
+- Progressive disclosure lives in local boundary guides — read the relevant one before working in that area:
+  - Building a bundled plugin → `extensions/AGENTS.md`
+  - Adding a plugin/SDK seam → `src/plugin-sdk/AGENTS.md`
+  - Working on a channel → `src/channels/AGENTS.md`
+  - Changing plugin loading/manifest/registry → `src/plugins/AGENTS.md`
+  - Touching gateway protocol → `src/gateway/protocol/AGENTS.md`
 - Plugin and extension boundary:
   - Public docs: `docs/plugins/building-plugins.md`, `docs/plugins/architecture.md`, `docs/plugins/sdk-overview.md`, `docs/plugins/sdk-entrypoints.md`, `docs/plugins/sdk-runtime.md`, `docs/plugins/manifest.md`, `docs/plugins/sdk-channel-plugins.md`, `docs/plugins/sdk-provider-plugins.md`
   - Definition files: `src/plugin-sdk/plugin-entry.ts`, `src/plugin-sdk/core.ts`, `src/plugin-sdk/provider-entry.ts`, `src/plugin-sdk/channel-contract.ts`, `scripts/lib/plugin-sdk-entrypoints.json`, `package.json`
@@ -182,6 +190,7 @@
 
 ## Release / Advisory Workflows
 
+- Skills (`$skill-name`) are agent workflows at `.agents/skills/<name>/SKILL.md`. Read the SKILL.md before using one; it contains the full workflow steps.
 - Use `$openclaw-release-maintainer` at `.agents/skills/openclaw-release-maintainer/SKILL.md` for release naming, version coordination, release auth, and changelog-backed release-note workflows.
 - Use `$openclaw-ghsa-maintainer` at `.agents/skills/openclaw-ghsa-maintainer/SKILL.md` for GHSA advisory inspection, patch/publish flow, private-fork checks, and GHSA API validation.
 - Release and publish remain explicit-approval actions even when using the skill.
