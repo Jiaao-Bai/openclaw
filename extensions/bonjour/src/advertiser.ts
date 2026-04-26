@@ -50,7 +50,6 @@ type CiaoModule = {
 type BonjourCycle = {
   responder: BonjourResponder;
   services: Array<{ label: string; svc: BonjourService }>;
-  cleanupUnhandledRejection?: () => void;
 };
 
 type ServiceStateTracker = {
@@ -253,12 +252,7 @@ export async function startGatewayBonjourAdvertiser(
         svc: gateway as unknown as BonjourService,
       });
 
-      const cleanupUnhandledRejection =
-        services.length > 0 && deps.registerUnhandledRejectionHandler
-          ? deps.registerUnhandledRejectionHandler(handleCiaoUnhandledRejection)
-          : undefined;
-
-      return { responder, services, cleanupUnhandledRejection };
+      return { responder, services };
     }
 
     async function stopCycle(cycle: BonjourCycle | null, opts?: { shutdownResponder?: boolean }) {
@@ -278,8 +272,6 @@ export async function startGatewayBonjourAdvertiser(
         }
       } catch {
         /* ignore */
-      } finally {
-        cycle.cleanupUnhandledRejection?.();
       }
     }
 
@@ -336,6 +328,10 @@ export async function startGatewayBonjourAdvertiser(
     let disabled = false;
     let consecutiveRestarts = 0;
     let cycle: BonjourCycle | null = createCycle();
+    // Register once for the advertiser lifetime so no gap opens during restart cycles.
+    const cleanupUnhandledRejection = deps.registerUnhandledRejectionHandler?.(
+      handleCiaoUnhandledRejection,
+    );
     const stateTracker = new Map<string, ServiceStateTracker>();
     attachConflictListeners(cycle.services);
     startAdvertising(cycle.services);
@@ -468,6 +464,7 @@ export async function startGatewayBonjourAdvertiser(
           // ignore
         }
         await stopCycle(cycle, { shutdownResponder: true });
+        cleanupUnhandledRejection?.();
         restoreConsoleLog();
       },
     };

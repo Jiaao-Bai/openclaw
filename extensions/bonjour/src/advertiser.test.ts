@@ -269,6 +269,43 @@ describe("gateway bonjour advertiser", () => {
     expect(order).toEqual(["shutdown", "cleanup"]);
   });
 
+  it("keeps the rejection handler registered across advertiser restart cycles", async () => {
+    enableAdvertiserUnitMode();
+    vi.useFakeTimers();
+
+    const stateRef = { value: "announcing" };
+    const destroy = vi.fn().mockResolvedValue(undefined);
+    let advertiseCount = 0;
+    const advertise = vi.fn().mockImplementation(() => {
+      advertiseCount += 1;
+      if (advertiseCount === 1) {
+        stateRef.value = "announcing";
+        return new Promise<void>(() => {});
+      }
+      stateRef.value = "announced";
+      return Promise.resolve();
+    });
+    mockCiaoService({ advertise, destroy, stateRef });
+
+    const cleanup = vi.fn();
+    registerUnhandledRejectionHandler.mockImplementation(() => cleanup);
+
+    const started = await startAdvertiser({ gatewayPort: 18789 });
+
+    expect(registerUnhandledRejectionHandler).toHaveBeenCalledTimes(1);
+
+    // Trigger a restart via the watchdog
+    await vi.advanceTimersByTimeAsync(15_000);
+    expect(createService).toHaveBeenCalledTimes(2);
+
+    // Handler must still be registered — no gap between stop and create cycles
+    expect(cleanup).not.toHaveBeenCalled();
+    expect(registerUnhandledRejectionHandler).toHaveBeenCalledTimes(1);
+
+    await started.stop();
+    expect(cleanup).toHaveBeenCalledTimes(1);
+  });
+
   it("logs ciao handler classifications at the bonjour caller", async () => {
     enableAdvertiserUnitMode();
 
