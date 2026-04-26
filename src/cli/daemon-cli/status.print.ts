@@ -182,9 +182,17 @@ export function printDaemonStatus(status: DaemonStatus, opts: { json: boolean })
   }
 
   if (rpc && !rpc.ok && service.loaded && service.runtime?.status === "running") {
-    defaultRuntime.log(
-      warnText("Warm-up: launch agents can take a few seconds. Try again shortly."),
-    );
+    if (/\bECONNRESET\b/i.test(rpc.error ?? "")) {
+      defaultRuntime.log(
+        warnText(
+          `Gateway is rejecting connections. If this persists, try: ${formatCliCommand("openclaw gateway restart")}`,
+        ),
+      );
+    } else {
+      defaultRuntime.log(
+        warnText("Warm-up: launch agents can take a few seconds. Try again shortly."),
+      );
+    }
   }
   if (rpc) {
     const probeLabel = formatProbeKindLabel(rpc.kind);

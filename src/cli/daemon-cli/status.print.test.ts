@@ -125,6 +125,49 @@ describe("printDaemonStatus", () => {
     );
   });
 
+  it("prints restart guidance when probe fails with ECONNRESET", () => {
+    printDaemonStatus(
+      {
+        service: {
+          label: "LaunchAgent",
+          loaded: true,
+          loadedText: "loaded",
+          notLoadedText: "not loaded",
+          runtime: { status: "running", pid: 8000 },
+        },
+        gateway: {
+          bindMode: "loopback",
+          bindHost: "127.0.0.1",
+          port: 18789,
+          portSource: "service args",
+          probeUrl: "ws://127.0.0.1:18789",
+        },
+        port: {
+          port: 18789,
+          status: "busy",
+          listeners: [{ pid: 8000, ppid: 7999, address: "127.0.0.1:18789" }],
+          hints: [],
+        },
+        rpc: {
+          ok: false,
+          error: "read ECONNRESET",
+          url: "ws://127.0.0.1:18789",
+        },
+        health: {
+          healthy: false,
+          staleGatewayPids: [],
+        },
+        extraServices: [],
+      },
+      { json: false },
+    );
+
+    expect(runtime.log).toHaveBeenCalledWith(
+      expect.stringContaining(formatCliCommand("openclaw gateway restart")),
+    );
+    expect(runtime.log).not.toHaveBeenCalledWith(expect.stringContaining("Try again shortly"));
+  });
+
   it("prints probe kind and capability separately", () => {
     printDaemonStatus(
       {
